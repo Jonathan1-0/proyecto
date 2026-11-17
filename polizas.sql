@@ -16,38 +16,6 @@
 /*!40111 SET @OLD_SQL_NOTES=@@SQL_NOTES, SQL_NOTES=0 */;
 
 --
--- Table structure for table `autos`
---
-
-DROP TABLE IF EXISTS `autos`;
-/*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!40101 SET character_set_client = utf8 */;
-CREATE TABLE `autos` (
-  `id` int(11) NOT NULL AUTO_INCREMENT,
-  `id_marca` int(11) NOT NULL,
-  `placas` char(10) DEFAULT NULL,
-  `modelo` varchar(4) DEFAULT NULL,
-  `motor` varchar(20) DEFAULT NULL,
-  `serie` varchar(25) DEFAULT NULL,
-  `eco` varchar(5) DEFAULT NULL,
-  `capacidad` int(11) DEFAULT NULL,
-  PRIMARY KEY (`id`),
-  KEY `fk_marcas` (`id_marca`),
-  CONSTRAINT `fk_marcas` FOREIGN KEY (`id_marca`) REFERENCES `marcas` (`id`) ON UPDATE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
-/*!40101 SET character_set_client = @saved_cs_client */;
-
---
--- Dumping data for table `autos`
---
-
-LOCK TABLES `autos` WRITE;
-/*!40000 ALTER TABLE `autos` DISABLE KEYS */;
-INSERT INTO `autos` VALUES (1,2,'QR25RT','2026','MODELO123','SERIE12','256',5);
-/*!40000 ALTER TABLE `autos` ENABLE KEYS */;
-UNLOCK TABLES;
-
---
 -- Table structure for table `cancelacion`
 --
 
@@ -60,13 +28,13 @@ CREATE TABLE `cancelacion` (
   `idUsuario` int(11) NOT NULL,
   `fechaSolicitud` date NOT NULL,
   `motivo` text NOT NULL,
-  `montoDevolucion` decimal(10,2) NOT NULL,
+  `montoDevolucion` decimal(10,2) DEFAULT NULL CHECK (`montoDevolucion` >= 0),
   `estatusDevolucion` varchar(50) NOT NULL,
   PRIMARY KEY (`idCancelacion`),
-  KEY `idPoliza` (`idPoliza`),
+  UNIQUE KEY `idPoliza` (`idPoliza`),
   KEY `idUsuario` (`idUsuario`),
-  CONSTRAINT `cancelacion_ibfk_1` FOREIGN KEY (`idPoliza`) REFERENCES `poliza` (`idPoliza`) ON DELETE CASCADE ON UPDATE CASCADE,
-  CONSTRAINT `cancelacion_ibfk_2` FOREIGN KEY (`idUsuario`) REFERENCES `usuario` (`idUsuario`) ON DELETE CASCADE ON UPDATE CASCADE
+  CONSTRAINT `cancelacion_ibfk_1` FOREIGN KEY (`idPoliza`) REFERENCES `poliza` (`idPoliza`) ON UPDATE CASCADE,
+  CONSTRAINT `cancelacion_ibfk_2` FOREIGN KEY (`idUsuario`) REFERENCES `usuario` (`idUsuario`) ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
@@ -89,13 +57,14 @@ DROP TABLE IF EXISTS `cliente`;
 CREATE TABLE `cliente` (
   `idCliente` int(11) NOT NULL AUTO_INCREMENT,
   `nombre` varchar(150) NOT NULL,
-  `telefono` varchar(20) DEFAULT NULL,
+  `telefono` varchar(20) NOT NULL,
   `correo` varchar(100) DEFAULT NULL,
-  `rfc` varchar(15) DEFAULT NULL,
+  `rfc` varchar(15) NOT NULL,
   `direccion` varchar(255) DEFAULT NULL,
   `medioContacto` varchar(50) DEFAULT NULL,
   `activo` tinyint(1) DEFAULT 1,
-  PRIMARY KEY (`idCliente`)
+  PRIMARY KEY (`idCliente`),
+  UNIQUE KEY `rfc` (`rfc`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
@@ -174,18 +143,18 @@ CREATE TABLE `cotizacion` (
   `idCompania` int(11) NOT NULL,
   `idTipo` int(11) NOT NULL,
   `fecha` date NOT NULL,
-  `costo` decimal(10,2) NOT NULL,
-  `opcionesPago` varchar(100) DEFAULT NULL,
+  `costo` decimal(10,2) DEFAULT NULL CHECK (`costo` > 0),
+  `opcionPago` varchar(50) DEFAULT NULL CHECK (`opcionPago` in ('COMPLETO','PARCIALIDADES')),
   `estatus` varchar(50) NOT NULL,
   PRIMARY KEY (`idCotizacion`),
   KEY `idVehiculo` (`idVehiculo`),
   KEY `idUsuario` (`idUsuario`),
   KEY `idCompania` (`idCompania`),
   KEY `idTipo` (`idTipo`),
-  CONSTRAINT `cotizacion_ibfk_1` FOREIGN KEY (`idVehiculo`) REFERENCES `vehiculo` (`idVehiculo`) ON DELETE CASCADE ON UPDATE CASCADE,
-  CONSTRAINT `cotizacion_ibfk_2` FOREIGN KEY (`idUsuario`) REFERENCES `usuario` (`idUsuario`) ON DELETE CASCADE ON UPDATE CASCADE,
-  CONSTRAINT `cotizacion_ibfk_3` FOREIGN KEY (`idCompania`) REFERENCES `companiaseguros` (`idCompania`) ON DELETE CASCADE ON UPDATE CASCADE,
-  CONSTRAINT `cotizacion_ibfk_4` FOREIGN KEY (`idTipo`) REFERENCES `tipopoliza` (`idTipo`) ON DELETE CASCADE ON UPDATE CASCADE
+  CONSTRAINT `cotizacion_ibfk_1` FOREIGN KEY (`idVehiculo`) REFERENCES `vehiculo` (`idVehiculo`) ON UPDATE CASCADE,
+  CONSTRAINT `cotizacion_ibfk_2` FOREIGN KEY (`idUsuario`) REFERENCES `usuario` (`idUsuario`) ON UPDATE CASCADE,
+  CONSTRAINT `cotizacion_ibfk_3` FOREIGN KEY (`idCompania`) REFERENCES `companiaseguros` (`idCompania`) ON UPDATE CASCADE,
+  CONSTRAINT `cotizacion_ibfk_4` FOREIGN KEY (`idTipo`) REFERENCES `tipopoliza` (`idTipo`) ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
@@ -208,12 +177,12 @@ DROP TABLE IF EXISTS `detallecobertura`;
 CREATE TABLE `detallecobertura` (
   `idPoliza` int(11) NOT NULL,
   `idCobertura` int(11) NOT NULL,
-  `sumaAsegurada` decimal(12,2) NOT NULL,
-  `deducible` decimal(10,2) NOT NULL,
+  `sumaAsegurada` decimal(12,2) DEFAULT NULL CHECK (`sumaAsegurada` > 0),
+  `deducible` decimal(10,2) DEFAULT NULL CHECK (`deducible` >= 0),
   PRIMARY KEY (`idPoliza`,`idCobertura`),
   KEY `idCobertura` (`idCobertura`),
-  CONSTRAINT `detallecobertura_ibfk_1` FOREIGN KEY (`idPoliza`) REFERENCES `poliza` (`idPoliza`) ON DELETE CASCADE ON UPDATE CASCADE,
-  CONSTRAINT `detallecobertura_ibfk_2` FOREIGN KEY (`idCobertura`) REFERENCES `cobertura` (`idCobertura`) ON DELETE CASCADE ON UPDATE CASCADE
+  CONSTRAINT `detallecobertura_ibfk_1` FOREIGN KEY (`idPoliza`) REFERENCES `poliza` (`idPoliza`) ON UPDATE CASCADE,
+  CONSTRAINT `detallecobertura_ibfk_2` FOREIGN KEY (`idCobertura`) REFERENCES `cobertura` (`idCobertura`) ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
@@ -241,7 +210,7 @@ CREATE TABLE `documento` (
   `rutaArchivo` varchar(255) NOT NULL,
   PRIMARY KEY (`idDocumento`),
   KEY `idCliente` (`idCliente`),
-  CONSTRAINT `documento_ibfk_1` FOREIGN KEY (`idCliente`) REFERENCES `cliente` (`idCliente`) ON DELETE CASCADE ON UPDATE CASCADE
+  CONSTRAINT `documento_ibfk_1` FOREIGN KEY (`idCliente`) REFERENCES `cliente` (`idCliente`) ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
@@ -264,8 +233,9 @@ DROP TABLE IF EXISTS `marca`;
 CREATE TABLE `marca` (
   `idMarca` int(11) NOT NULL AUTO_INCREMENT,
   `nombreMarca` varchar(100) NOT NULL,
+  `activo` tinyint(1) DEFAULT 1,
   PRIMARY KEY (`idMarca`)
-) ENGINE=InnoDB AUTO_INCREMENT=7 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -274,32 +244,7 @@ CREATE TABLE `marca` (
 
 LOCK TABLES `marca` WRITE;
 /*!40000 ALTER TABLE `marca` DISABLE KEYS */;
-INSERT INTO `marca` VALUES (2,'Toyota'),(4,'Ferrari'),(5,'Buggati'),(6,'Marcas');
 /*!40000 ALTER TABLE `marca` ENABLE KEYS */;
-UNLOCK TABLES;
-
---
--- Table structure for table `marcas`
---
-
-DROP TABLE IF EXISTS `marcas`;
-/*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!40101 SET character_set_client = utf8 */;
-CREATE TABLE `marcas` (
-  `id` int(11) NOT NULL AUTO_INCREMENT,
-  `nombre` varchar(50) NOT NULL,
-  PRIMARY KEY (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=16 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
-/*!40101 SET character_set_client = @saved_cs_client */;
-
---
--- Dumping data for table `marcas`
---
-
-LOCK TABLES `marcas` WRITE;
-/*!40000 ALTER TABLE `marcas` DISABLE KEYS */;
-INSERT INTO `marcas` VALUES (2,'Ford'),(3,'Porsche'),(4,'Mazda'),(5,'Toyota'),(11,'Buggati'),(12,'McLaren'),(13,'Ferrari'),(15,'Mazda');
-/*!40000 ALTER TABLE `marcas` ENABLE KEYS */;
 UNLOCK TABLES;
 
 --
@@ -316,13 +261,13 @@ CREATE TABLE `notificacion` (
   `tipo` varchar(50) NOT NULL,
   `fecha` date NOT NULL,
   `medio` varchar(50) NOT NULL,
-  `costoRenovacion` decimal(10,2) NOT NULL,
+  `costoRenovacion` decimal(10,2) DEFAULT NULL CHECK (`costoRenovacion` >= 0),
   `realizada` tinyint(1) DEFAULT 0,
   PRIMARY KEY (`idNotificacion`),
   KEY `idPoliza` (`idPoliza`),
   KEY `idUsuario` (`idUsuario`),
-  CONSTRAINT `notificacion_ibfk_1` FOREIGN KEY (`idPoliza`) REFERENCES `poliza` (`idPoliza`) ON DELETE CASCADE ON UPDATE CASCADE,
-  CONSTRAINT `notificacion_ibfk_2` FOREIGN KEY (`idUsuario`) REFERENCES `usuario` (`idUsuario`) ON DELETE CASCADE ON UPDATE CASCADE
+  CONSTRAINT `notificacion_ibfk_1` FOREIGN KEY (`idPoliza`) REFERENCES `poliza` (`idPoliza`) ON UPDATE CASCADE,
+  CONSTRAINT `notificacion_ibfk_2` FOREIGN KEY (`idUsuario`) REFERENCES `usuario` (`idUsuario`) ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
@@ -346,7 +291,7 @@ CREATE TABLE `pago` (
   `idPago` int(11) NOT NULL AUTO_INCREMENT,
   `idPoliza` int(11) NOT NULL,
   `numeroParcialidad` int(11) NOT NULL,
-  `monto` decimal(10,2) NOT NULL,
+  `monto` decimal(10,2) DEFAULT NULL CHECK (`monto` > 0),
   `fechaLimite` date NOT NULL,
   `fechaPago` date DEFAULT NULL,
   `metodoPago` varchar(50) DEFAULT NULL,
@@ -354,7 +299,7 @@ CREATE TABLE `pago` (
   `estatus` varchar(50) NOT NULL,
   PRIMARY KEY (`idPago`),
   KEY `idPoliza` (`idPoliza`),
-  CONSTRAINT `pago_ibfk_1` FOREIGN KEY (`idPoliza`) REFERENCES `poliza` (`idPoliza`) ON DELETE CASCADE ON UPDATE CASCADE
+  CONSTRAINT `pago_ibfk_1` FOREIGN KEY (`idPoliza`) REFERENCES `poliza` (`idPoliza`) ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
@@ -376,32 +321,33 @@ DROP TABLE IF EXISTS `poliza`;
 /*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `poliza` (
   `idPoliza` int(11) NOT NULL AUTO_INCREMENT,
-  `numeroPoliza` varchar(50) NOT NULL,
-  `idCotizacion` int(11) NOT NULL,
+  `numeroPoliza` varchar(50) DEFAULT NULL,
+  `idCotizacion` int(11) DEFAULT NULL,
   `idVehiculo` int(11) NOT NULL,
   `idCompania` int(11) NOT NULL,
   `idUsuario` int(11) NOT NULL,
   `idTipo` int(11) NOT NULL,
   `idPolizaAnterior` int(11) DEFAULT NULL,
-  `fechaEmision` date NOT NULL,
+  `fechaEmision` date DEFAULT NULL,
   `fechaInicio` date NOT NULL,
   `fechaVencimiento` date NOT NULL,
-  `primaTotal` decimal(10,2) NOT NULL,
+  `primaTotal` decimal(10,2) DEFAULT NULL CHECK (`primaTotal` > 0),
   `estatus` varchar(50) NOT NULL,
   PRIMARY KEY (`idPoliza`),
   UNIQUE KEY `numeroPoliza` (`numeroPoliza`),
-  KEY `idCotizacion` (`idCotizacion`),
+  UNIQUE KEY `idCotizacion` (`idCotizacion`),
   KEY `idVehiculo` (`idVehiculo`),
   KEY `idCompania` (`idCompania`),
   KEY `idUsuario` (`idUsuario`),
   KEY `idTipo` (`idTipo`),
   KEY `idPolizaAnterior` (`idPolizaAnterior`),
-  CONSTRAINT `poliza_ibfk_1` FOREIGN KEY (`idCotizacion`) REFERENCES `cotizacion` (`idCotizacion`) ON DELETE CASCADE ON UPDATE CASCADE,
-  CONSTRAINT `poliza_ibfk_2` FOREIGN KEY (`idVehiculo`) REFERENCES `vehiculo` (`idVehiculo`) ON DELETE CASCADE ON UPDATE CASCADE,
-  CONSTRAINT `poliza_ibfk_3` FOREIGN KEY (`idCompania`) REFERENCES `companiaseguros` (`idCompania`) ON DELETE CASCADE ON UPDATE CASCADE,
-  CONSTRAINT `poliza_ibfk_4` FOREIGN KEY (`idUsuario`) REFERENCES `usuario` (`idUsuario`) ON DELETE CASCADE ON UPDATE CASCADE,
-  CONSTRAINT `poliza_ibfk_5` FOREIGN KEY (`idTipo`) REFERENCES `tipopoliza` (`idTipo`) ON DELETE CASCADE ON UPDATE CASCADE,
-  CONSTRAINT `poliza_ibfk_6` FOREIGN KEY (`idPolizaAnterior`) REFERENCES `poliza` (`idPoliza`) ON DELETE SET NULL ON UPDATE CASCADE
+  CONSTRAINT `poliza_ibfk_1` FOREIGN KEY (`idCotizacion`) REFERENCES `cotizacion` (`idCotizacion`) ON UPDATE CASCADE,
+  CONSTRAINT `poliza_ibfk_2` FOREIGN KEY (`idVehiculo`) REFERENCES `vehiculo` (`idVehiculo`) ON UPDATE CASCADE,
+  CONSTRAINT `poliza_ibfk_3` FOREIGN KEY (`idCompania`) REFERENCES `companiaseguros` (`idCompania`) ON UPDATE CASCADE,
+  CONSTRAINT `poliza_ibfk_4` FOREIGN KEY (`idUsuario`) REFERENCES `usuario` (`idUsuario`) ON UPDATE CASCADE,
+  CONSTRAINT `poliza_ibfk_5` FOREIGN KEY (`idTipo`) REFERENCES `tipopoliza` (`idTipo`) ON UPDATE CASCADE,
+  CONSTRAINT `poliza_ibfk_6` FOREIGN KEY (`idPolizaAnterior`) REFERENCES `poliza` (`idPoliza`) ON UPDATE CASCADE,
+  CONSTRAINT `chk_fechas` CHECK (`fechaVencimiento` >= `fechaInicio`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
@@ -412,6 +358,33 @@ CREATE TABLE `poliza` (
 LOCK TABLES `poliza` WRITE;
 /*!40000 ALTER TABLE `poliza` DISABLE KEYS */;
 /*!40000 ALTER TABLE `poliza` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
+-- Table structure for table `submarca`
+--
+
+DROP TABLE IF EXISTS `submarca`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `submarca` (
+  `idSubmarca` int(11) NOT NULL AUTO_INCREMENT,
+  `idMarca` int(11) NOT NULL,
+  `nombreSubmarca` varchar(100) NOT NULL,
+  `activo` tinyint(1) DEFAULT 1,
+  PRIMARY KEY (`idSubmarca`),
+  KEY `idMarca` (`idMarca`),
+  CONSTRAINT `submarca_ibfk_1` FOREIGN KEY (`idMarca`) REFERENCES `marca` (`idMarca`) ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `submarca`
+--
+
+LOCK TABLES `submarca` WRITE;
+/*!40000 ALTER TABLE `submarca` DISABLE KEYS */;
+/*!40000 ALTER TABLE `submarca` ENABLE KEYS */;
 UNLOCK TABLES;
 
 --
@@ -476,8 +449,7 @@ DROP TABLE IF EXISTS `vehiculo`;
 CREATE TABLE `vehiculo` (
   `idVehiculo` int(11) NOT NULL AUTO_INCREMENT,
   `idCliente` int(11) NOT NULL,
-  `marca` varchar(50) NOT NULL,
-  `submarca` varchar(50) NOT NULL,
+  `idSubmarca` int(11) NOT NULL,
   `modelo` varchar(20) NOT NULL,
   `tipoVehiculo` varchar(50) NOT NULL,
   `numeroSerie` varchar(50) NOT NULL,
@@ -486,7 +458,9 @@ CREATE TABLE `vehiculo` (
   PRIMARY KEY (`idVehiculo`),
   UNIQUE KEY `numeroSerie` (`numeroSerie`),
   KEY `idCliente` (`idCliente`),
-  CONSTRAINT `vehiculo_ibfk_1` FOREIGN KEY (`idCliente`) REFERENCES `cliente` (`idCliente`) ON DELETE CASCADE ON UPDATE CASCADE
+  KEY `idSubmarca` (`idSubmarca`),
+  CONSTRAINT `vehiculo_ibfk_1` FOREIGN KEY (`idCliente`) REFERENCES `cliente` (`idCliente`) ON UPDATE CASCADE,
+  CONSTRAINT `vehiculo_ibfk_2` FOREIGN KEY (`idSubmarca`) REFERENCES `submarca` (`idSubmarca`) ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
@@ -508,4 +482,4 @@ UNLOCK TABLES;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2026-11-17 10:58:52
+-- Dump completed on 2026-11-17 14:17:06
